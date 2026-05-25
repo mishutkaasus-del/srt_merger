@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0d0d0d;
+    --surface: #141414;
+    --border:  #2a2a2a;
+    --accent:  #e8ff47;
+    --accent2: #ff6b35;
+    --text:    #e8e8e0;
+    --muted:   #555;
+    --success: #4ade80;
+    --error:   #f87171;
+    --mono:    'JetBrains Mono', monospace;
+    --display: 'Unbounded', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 48px;
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+  }
+  .logo {
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+  }
+  .logo span { color: var(--muted); font-weight: 400; }
+  .nav-links { margin-left: auto; display: flex; gap: 24px; list-style: none; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+
+  /* ── Main layout ── */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 48px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── Section header ── */
+  .tool-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .tool-num {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    background: rgba(232,255,71,0.08);
+    border: 1px solid rgba(232,255,71,0.2);
+    padding: 3px 10px;
+    border-radius: 2px;
+  }
+  .tool-title {
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    margin: 48px 0;
+    height: 1px;
+    background: var(--border);
+    position: relative;
+  }
+
+  /* ── Col label ── */
+  .col-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  /* ── Textarea base ── */
+  textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.65;
+    padding: 14px;
+    border-radius: 6px;
+    resize: vertical;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #d4e83a; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 14px;
+  }
+
+  /* ── Status log ── */
+  .status {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    display: none;
+  }
+  .status.ok   { background: rgba(74,222,128,0.07); border: 1px solid rgba(74,222,128,0.2);  color: var(--success); }
+  .status.err  { background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.2); color: var(--error); }
+  .status.warn { background: rgba(255,107,53,0.07);  border: 1px solid rgba(255,107,53,0.2);  color: var(--accent2); }
+
+  /* ── Copy flash ── */
+  .copy-flash { font-size: 11px; color: var(--success); opacity: 0; transition: opacity 0.3s; }
+  .copy-flash.show { opacity: 1; }
+
+
+  /* ══════════════════════════════
+     TOOL 1 — TEXT FORMATTER
+  ══════════════════════════════ */
+
+  .formatter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  #fmt-input  { min-height: 140px; }
+  #fmt-output {
+    min-height: 140px;
+    background: rgba(232,255,71,0.03);
+    border-color: rgba(232,255,71,0.12);
+    cursor: default;
+    resize: none;
+    color: var(--accent);
+  }
+
+
+  /* ══════════════════════════════
+     TOOL 2 — SRT MERGER
+  ══════════════════════════════ */
+
+  /*
+    Layout (per sketch):
+    Left col:  SRT drop + TXT drop stacked (fixed 150px)
+    Mid col:   textarea (flex, resizable)
+    Right col: buttons top + log panel below (fixed 220px)
+  */
+  .merger-body {
+    display: grid;
+    grid-template-columns: 150px 1fr 220px;
+    gap: 16px;
+    align-items: start;
+  }
+  /* All direct children of merger-body are col wrappers.
+     Force identical top structure: label (20px) + 6px gap + content */
+  .merger-drops,
+  .merger-body > div,
+  .merger-right {
+    display: flex;
+    flex-direction: column;
+  }
+  .merger-body .col-label {
+    height: 20px;
+    line-height: 20px;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+  }
+
+  /* Left col — two drop zones stacked */
+  .merger-drops {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: 6px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 90px;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(232,255,71,0.04);
+  }
+  .drop-zone.has-file {
+    border-color: var(--success);
+    border-style: solid;
+    background: rgba(74,222,128,0.04);
+  }
+  .drop-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+  .drop-icon { font-size: 18px; line-height: 1; pointer-events: none; }
+  .drop-ext {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    pointer-events: none;
+  }
+  .drop-label {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.4;
+    pointer-events: none;
+  }
+  .drop-label strong { color: var(--text); }
+  .drop-filename {
+    font-size: 10px;
+    color: var(--success);
+    font-weight: 500;
+    pointer-events: none;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 4px;
+  }
+
+  /* "or" highlight */
+  .or-highlight { color: var(--accent); font-weight: 700; }
+
+  /* Mid col — resizable textarea */
+  .merger-textarea-col {
+    display: flex;
+    flex-direction: column;
+    resize: vertical;
+    overflow: hidden;
+    min-height: 200px;
+  }
+  #merger-txt-textarea {
+    flex: 1;
+    resize: none;
+    min-height: 0;
+  }
+
+  /* Right col */
+  .merger-right {
+    /* layout handled by .merger-body rule above */
+  }
+  .merger-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .btn-merge  { background: var(--accent); color: #000; width: 100%; justify-content: center; }
+  .btn-merge:hover { background: #d4e83a; transform: translateY(-1px); }
+  .btn-download {
+    background: transparent;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+    width: 100%;
+    justify-content: center;
+    opacity: 0.35;
+    pointer-events: none;
+    transition: all 0.2s;
+  }
+  .btn-download.ready {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  .btn-download.ready:hover { background: rgba(232,255,71,0.08); transform: translateY(-1px); }
+  .btn-clear-merger {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    width: 100%;
+    justify-content: center;
+  }
+  .btn-clear-merger:hover { color: var(--text); border-color: var(--text); }
+
+  /* Log panel */
+  .merger-log-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 11.5px;
+    font-family: var(--mono);
+    line-height: 1.7;
+    min-height: 80px;
+    max-height: 340px;
+    overflow-y: auto;
+    color: var(--muted);
+    white-space: pre-wrap;
+  }
+  .merger-log-panel::-webkit-scrollbar { width: 4px; }
+  .merger-log-panel::-webkit-scrollbar-track { background: transparent; }
+  .merger-log-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-idle    { color: var(--muted); }
+  .log-ok      { color: var(--success); }
+  .log-warn    { color: var(--accent2); }
+  .log-err     { color: var(--error); }
+  .log-summary { color: var(--text); font-weight: 500; margin-top: 4px; border-top: 1px solid var(--border); padding-top: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">text<span>/</span>tools</div>
+  <nav>
+    <ul class="nav-links">
+      <li><a href="#formatter">Formatter</a></li>
+      <li><a href="#merger">SRT Merger</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ══ 01 FORMATTER ══ -->
+  <section id="formatter">
+    <div class="tool-label">
+      <span class="tool-num">01</span>
+      <h2 class="tool-title">Text Formatter</h2>
+    </div>
+
+    <div class="formatter-grid">
+      <div>
+        <p class="col-label">Input</p>
+        <textarea id="fmt-input" placeholder="Paste your text here…&#10;&#10;Line breaks will be removed and em dash spacing fixed automatically."></textarea>
+      </div>
+      <div>
+        <p class="col-label">Output</p>
+        <textarea id="fmt-output" readonly placeholder="Result will appear here…"></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runFormatter()">▶  Format</button>
+      <button class="btn btn-ghost" onclick="copyFormatted()">Copy result</button>
+      <span class="copy-flash" id="fmt-copy-flash">Copied!</span>
+      <button class="btn btn-ghost" style="margin-left:auto" onclick="clearFormatter()">Clear</button>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══ 02 SRT MERGER ══ -->
+  <section id="merger">
+    <div class="tool-label">
+      <span class="tool-num">02</span>
+      <h2 class="tool-title">SRT Merger</h2>
+    </div>
+
+    <div class="merger-body">
+
+      <!-- Left: SRT drop -->
+      <div class="merger-drops">
+        <p class="col-label">SRT file</p>
+        <div class="drop-zone" id="srt-drop"
+             ondrop="handleDrop(event,'srt')"
+             ondragover="handleDragOver(event)"
+             ondragleave="handleDragLeave(event)">
+          <input type="file" accept=".srt" id="srt-input" onchange="handleFileSelect(this,'srt')">
+          <div class="drop-icon">📄</div>
+          <div class="drop-ext">.SRT</div>
+          <div class="drop-label"><strong>Drop here</strong><br>or click</div>
+          <div class="drop-filename" id="srt-filename"></div>
+        </div>
+      </div>
+
+      <!-- Mid: textarea -->
+      <div>
+        <p class="col-label">Text</p>
+        <div class="merger-textarea-col">
+          <textarea id="merger-txt-textarea"
+            placeholder="Paste your text here…&#10;&#10;One subtitle per paragraph, blank line between blocks."></textarea>
+        </div>
+      </div>
+
+      <!-- Right: buttons + log -->
+      <div class="merger-right">
+        <p class="col-label">Output</p>
+        <div class="merger-btns">
+          <button class="btn btn-merge" id="merge-btn" onclick="runMerge()">▶  Merge</button>
+          <button class="btn btn-download" id="download-btn" onclick="downloadResult()">↓  Download</button>
+          <button class="btn btn-clear-merger" onclick="clearMerger()">Clear</button>
+        </div>
+        <div class="merger-log-panel" id="merger-log"><span class="log-idle">— awaiting merge —</span></div>
+      </div>
+
+    </div><!-- /merger-body -->
+  </section>
+
+</main>
+
+<script>
+// ══ FORMATTER ══════════════════════════════
+
+async function runFormatter() {
+  const input = document.getElementById('fmt-input').value;
+  if (!input.trim()) return;
+  const res = await fetch('/api/format', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ text: input })
+  });
+  const data = await res.json();
+  document.getElementById('fmt-output').value = data.result || data.error || '';
+}
+
+function copyFormatted() {
+  const val = document.getElementById('fmt-output').value;
+  if (!val) return;
+  navigator.clipboard.writeText(val).then(() => {
+    const el = document.getElementById('fmt-copy-flash');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 1800);
+  });
+}
+
+function clearFormatter() {
+  document.getElementById('fmt-input').value = '';
+  document.getElementById('fmt-output').value = '';
+}
+
+document.getElementById('fmt-input').addEventListener('paste', () => {
+  setTimeout(runFormatter, 50);
+});
+
+
+// ══ SRT MERGER ═════════════════════════════
+
+let srtFile   = null;
+let lastBlob  = null;
+let lastFilename = 'merged.srt';
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+function handleDrop(e, type) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) setFile(file, type);
+}
+function handleFileSelect(input, type) {
+  const file = input.files[0];
+  if (file) setFile(file, type);
+}
+function setFile(file, type) {
+  if (type === 'srt') {
+    srtFile = file;
+    document.getElementById('srt-filename').textContent = file.name;
+    document.getElementById('srt-drop').classList.add('has-file');
+  }
+}
+
+function setLog(html) {
+  document.getElementById('merger-log').innerHTML = html;
+}
+
+function formatLog(rawLog) {
+  // rawLog is pipe-separated lines from X-Log header
+  const lines = rawLog.split(' | ').filter(l => l.trim());
+  let html = '';
+  let summaryLine = '';
+
+  for (const line of lines) {
+    if (line.includes('[MISSING]')) {
+      html += `<span class="log-err">❌ ${escHtml(line.replace('[MISSING]','').trim())}</span>\n`;
+    } else if (line.includes('[SKIP]')) {
+      html += `<span class="log-err">⏭️ ${escHtml(line.replace('[SKIP]','').trim())}</span>\n`;
+    } else if (line.includes('[APPROX]')) {
+      html += `<span class="log-warn">⚠️ ${escHtml(line.replace('[APPROX]','').trim())}</span>\n`;
+    } else if (line.includes('[OK]') || line.match(/\d+ subtitles/)) {
+      summaryLine = line;
+    } else {
+      html += `<span class="log-warn">${escHtml(line)}</span>\n`;
+    }
+  }
+
+  // summary at bottom
+  if (summaryLine) {
+    const hasIssues = rawLog.includes('[MISSING]') || rawLog.includes('[SKIP]') || rawLog.includes('[APPROX]');
+    const icon = hasIssues ? '🟡' : '✅';
+    html += `<span class="log-summary">${icon} ${escHtml(summaryLine.trim())}</span>`;
+  }
+
+  return html || '<span class="log-ok">✅ Done — no issues found</span>';
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function runMerge() {
+  const btn = document.getElementById('merge-btn');
+
+  if (!srtFile) {
+    setLog('<span class="log-err">❌ Please provide an SRT file.</span>'); return;
+  }
+  const txtText = document.getElementById('merger-txt-textarea').value.trim();
+  if (!txtFile && !txtText) {
+    setLog('<span class="log-err">❌ Please enter text or upload a .txt file.</span>'); return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳  Processing…';
+  setLog('<span class="log-idle">Processing…</span>');
+
+  // reset download btn
+  lastBlob = null;
+  const dlBtn = document.getElementById('download-btn');
+  dlBtn.classList.remove('ready');
+
+  const fd = new FormData();
+  fd.append('srt', srtFile);
+  fd.append('txt_text', txtText);
+
+  try {
+    const res = await fetch('/api/merge', { method: 'POST', body: fd });
+
+    if (!res.ok) {
+      let errMsg = 'Server error';
+      try { const e = await res.json(); errMsg = e.error || errMsg; } catch {}
+      setLog(`<span class="log-err">❌ ${escHtml(errMsg)}</span>`);
+      return;
+    }
+
+    lastBlob = await res.blob();
+    const rawLog = res.headers.get('X-Log') || '';
+    const cd = res.headers.get('Content-Disposition') || '';
+    const nm = cd.match(/filename="?([^"]+)"?/);
+    lastFilename = nm ? nm[1] : 'merged.srt';
+
+    setLog(formatLog(rawLog));
+
+    // enable download button
+    dlBtn.classList.add('ready');
+
+  } catch(e) {
+    setLog(`<span class="log-err">❌ Network error: ${escHtml(e.message)}</span>`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '▶  Merge';
+  }
+}
+
+function downloadResult() {
+  if (!lastBlob) return;
+  const url = URL.createObjectURL(lastBlob);
+  const a = document.createElement('a');
+  a.href = url; a.download = lastFilename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function clearMerger() {
+  srtFile = null; lastBlob = null;
+  document.getElementById('srt-filename').textContent = '';
+  document.getElementById('srt-drop').classList.remove('has-file');
+  document.getElementById('srt-input').value = '';
+  document.getElementById('merger-txt-textarea').value = '';
+  document.getElementById('download-btn').classList.remove('ready');
+  setLog('<span class="log-idle">— awaiting merge —</span>');
+}
+</script>
+</body>
+</html>
