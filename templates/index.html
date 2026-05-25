@@ -578,7 +578,7 @@ async function runMerge() {
     setLog('<span class="log-err">❌ Please provide an SRT file.</span>'); return;
   }
   const txtText = document.getElementById('merger-txt-textarea').value.trim();
-  if (!txtFile && !txtText) {
+  if (!txtText) {
     setLog('<span class="log-err">❌ Please enter text or upload a .txt file.</span>'); return;
   }
 
