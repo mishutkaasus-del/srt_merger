@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 
 
-# ─── Text Formatter Logic ────────────────────────────────────────────────────
+# ─── Text Formatter Logic ─────────────────────────────────────────────────────
 
 def format_text(input_text):
     result = " ".join(input_text.split())
@@ -16,7 +16,7 @@ def format_text(input_text):
     return result
 
 
-# ─── SRT Merger Logic ────────────────────────────────────────────────────────
+# ─── SRT Merger Logic ─────────────────────────────────────────────────────────
 
 def parse_srt(content):
     blocks = re.split(r"\n\n+", content.strip())
@@ -239,7 +239,7 @@ def merge_srt(srt_content, text_content):
     return output, "\n".join(log) if log else f"OK — {len(result)} subtitles, no issues"
 
 
-# ─── Routes ──────────────────────────────────────────────────────────────────
+# ─── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -284,13 +284,14 @@ def api_merge():
     stem = os.path.splitext(srt_file.filename)[0]
     filename = f"{stem}_merged.srt"
 
-    return send_file(
+    response = make_response(send_file(
         buf,
         mimetype="text/plain",
         as_attachment=True,
         download_name=filename,
-        headers={"X-Log": log.replace("\n", " | ")}
-    )
+    ))
+    response.headers["X-Log"] = log.replace("\n", " | ")
+    return response
 
 
 if __name__ == "__main__":
