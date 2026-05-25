@@ -207,6 +207,45 @@
     Mid col:   textarea (flex, resizable)
     Right col: buttons top + log panel below (fixed 220px)
   */
+  .info-btn {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--muted);
+    color: var(--muted);
+    font-size: 11px;
+    font-style: italic;
+    font-family: Georgia, serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    margin-left: 4px;
+    flex-shrink: 0;
+  }
+  .info-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .info-tooltip {
+    display: none;
+    position: absolute;
+    left: 26px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-family: var(--mono);
+    font-style: normal;
+    color: var(--text);
+    width: 420px;
+    z-index: 100;
+    line-height: 1.6;
+    white-space: normal;
+  }
+  .info-btn:hover .info-tooltip { display: block; }
+
   .merger-body {
     display: grid;
     grid-template-columns: 150px 1fr 220px;
@@ -423,6 +462,19 @@
     <div class="tool-label">
       <span class="tool-num">02</span>
       <h2 class="tool-title">SRT Merger</h2>
+      <div class="info-btn" tabindex="0">
+        i
+        <div class="info-tooltip">
+          <div style="margin-bottom:8px;font-weight:700;color:var(--accent)">Як це працює</div>
+          В <b>SRT file</b> — SRT файл з PRpro, де субтитри розбиті по слову.<br><br>
+          В <b>Text</b> — готові субтитри від маркетолога. Один субтитр на абзац, між субтитрами порожній рядок. Скрипт автоматично прибере нумерацію, кириличний текст, посилання на асети і технічні мітки.<br><br>
+          Після натискання <b>▶ Merge</b> зʼявляться алерти:<br><br>
+          ✅ — все знайдено точно, файл готовий без правок.<br>
+          ⚠️ — тайминг приблизний: межа субтитру потрапила всередину блоку SRT. Перевір вручну за таймкодом.<br>
+          ❌ — слово не знайдено в SRT. Тайминг взято від сусіднього слова — майже точно неправильний. Перевір обовʼязково.<br>
+          ⏭️ — SRT закінчився раніше ніж текст. Субтитр не потрапив у файл взагалі.
+        </div>
+      </div>
     </div>
 
     <div class="merger-body">
@@ -549,7 +601,8 @@ function formatLog(log, summary) {
     } else if (l.type === 'SKIP') {
       html += `<span class="log-err">⏭️ [${idx}] SRT ended: ${escHtml(l.text)}</span>\n`;
     } else if (l.type === 'APPROX') {
-      html += `<span class="log-warn">⚠️ [${idx}] ${escHtml(l.ts)} — ${escHtml(l.reason)}: ${escHtml(l.text)}</span>\n`;
+      const loc = l.reason.includes("boundary") ? " (" + l.reason.replace("boundary estimated (","").replace(")","") + ")" : "";
+      html += `<span class="log-warn">⚠️ [${idx}] ${escHtml(l.ts)}${loc}: ${escHtml(l.text)}</span>\n`;
     }
   }
 
