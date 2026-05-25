@@ -537,32 +537,25 @@ function setLog(html) {
   document.getElementById('merger-log').innerHTML = html;
 }
 
-function formatLog(rawLog) {
-  // rawLog is pipe-separated lines from X-Log header
-  const lines = rawLog.split(' | ').filter(l => l.trim());
+function formatLog(log, summary) {
+  // log is array of {type, idx, ts, reason, text}
   let html = '';
-  let summaryLine = '';
+  const hasIssues = log.some(l => l.type === 'MISSING' || l.type === 'SKIP' || l.type === 'APPROX');
 
-  for (const line of lines) {
-    if (line.includes('[MISSING]')) {
-      html += `<span class="log-err">❌ ${escHtml(line.replace('[MISSING]','').trim())}</span>\n`;
-    } else if (line.includes('[SKIP]')) {
-      html += `<span class="log-err">⏭️ ${escHtml(line.replace('[SKIP]','').trim())}</span>\n`;
-    } else if (line.includes('[APPROX]')) {
-      html += `<span class="log-warn">⚠️ ${escHtml(line.replace('[APPROX]','').trim())}</span>\n`;
-    } else if (line.includes('[OK]') || line.match(/\d+ subtitles/)) {
-      summaryLine = line;
-    } else {
-      html += `<span class="log-warn">${escHtml(line)}</span>\n`;
+  for (const l of log) {
+    const idx = String(l.idx).padStart(3, ' ');
+    if (l.type === 'MISSING') {
+      html += `<span class="log-err">❌ [${idx}] ${escHtml(l.ts)} — not found: ${escHtml(l.text)}</span>\n`;
+    } else if (l.type === 'SKIP') {
+      html += `<span class="log-err">⏭️ [${idx}] SRT ended: ${escHtml(l.text)}</span>\n`;
+    } else if (l.type === 'APPROX') {
+      html += `<span class="log-warn">⚠️ [${idx}] ${escHtml(l.ts)} — ${escHtml(l.reason)}: ${escHtml(l.text)}</span>\n`;
     }
   }
 
-  // summary at bottom
-  if (summaryLine) {
-    const hasIssues = rawLog.includes('[MISSING]') || rawLog.includes('[SKIP]') || rawLog.includes('[APPROX]');
-    const icon = hasIssues ? '🟡' : '✅';
-    html += `<span class="log-summary">${icon} ${escHtml(summaryLine.trim())}</span>`;
-  }
+  const icon = hasIssues ? '🟡' : '✅';
+  const note = hasIssues ? `, ${log.length} need review` : ', no issues';
+  html += `<span class="log-summary">${icon} ${escHtml(summary)}${note}</span>`;
 
   return html || '<span class="log-ok">✅ Done — no issues found</span>';
 }
@@ -597,23 +590,19 @@ async function runMerge() {
 
   try {
     const res = await fetch('/api/merge', { method: 'POST', body: fd });
+    const data = await res.json();
 
     if (!res.ok) {
-      let errMsg = 'Server error';
-      try { const e = await res.json(); errMsg = e.error || errMsg; } catch {}
-      setLog(`<span class="log-err">❌ ${escHtml(errMsg)}</span>`);
+      setLog(`<span class="log-err">❌ ${escHtml(data.error || 'Server error')}</span>`);
       return;
     }
 
-    lastBlob = await res.blob();
-    const rawLog = res.headers.get('X-Log') || '';
-    const cd = res.headers.get('Content-Disposition') || '';
-    const nm = cd.match(/filename="?([^"]+)"?/);
-    lastFilename = nm ? nm[1] : 'merged.srt';
+    // decode base64 file and store as blob
+    const bytes = Uint8Array.from(atob(data.file_b64), c => c.charCodeAt(0));
+    lastBlob = new Blob([bytes], { type: 'text/plain' });
+    lastFilename = data.filename || 'merged.srt';
 
-    setLog(formatLog(rawLog));
-
-    // enable download button
+    setLog(formatLog(data.log || [], data.summary || ''));
     dlBtn.classList.add('ready');
 
   } catch(e) {
