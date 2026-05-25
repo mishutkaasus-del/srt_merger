@@ -220,7 +220,7 @@ def api_merge():
     if not txt_text:
         return jsonify({"error": "No text provided"}), 400
 
-    srt_content = srt_file.read().decode("utf-8-sig")
+    srt_content = srt_file.read().decode("utf-8-sig").replace("\r\n", "\n").replace("\r", "\n")
     output, log, summary = merge_srt(srt_content, txt_text)
 
     if output is None:
