@@ -441,18 +441,20 @@
       <div>
         <p class="col-label">Input</p>
         <textarea id="fmt-input" placeholder="Paste your text here…&#10;&#10;Line breaks will be removed and em dash spacing fixed automatically."></textarea>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn btn-primary" onclick="runFormatter()">▶  Format</button>
+          <button class="btn btn-ghost" onclick="clearFormatter()">Clear</button>
+        </div>
       </div>
       <div>
         <p class="col-label">Output</p>
         <textarea id="fmt-output" readonly placeholder="Result will appear here…"></textarea>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn btn-primary" onclick="copyFormatted()">Copy result</button>
+          <button class="btn btn-download ready" onclick="downloadFormatted()" style="width:auto">↓  Download .txt</button>
+          <span class="copy-flash" id="fmt-copy-flash">Copied!</span>
+        </div>
       </div>
-    </div>
-
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="runFormatter()">▶  Format</button>
-      <button class="btn btn-ghost" onclick="copyFormatted()">Copy result</button>
-      <span class="copy-flash" id="fmt-copy-flash">Copied!</span>
-      <button class="btn btn-ghost" style="margin-left:auto" onclick="clearFormatter()">Clear</button>
     </div>
   </section>
 
@@ -548,6 +550,21 @@ function copyFormatted() {
 function clearFormatter() {
   document.getElementById('fmt-input').value = '';
   document.getElementById('fmt-output').value = '';
+}
+
+function downloadFormatted() {
+  const val = document.getElementById('fmt-output').value;
+  if (!val) return;
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const name = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.txt`;
+  const blob = new Blob([val], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 document.getElementById('fmt-input').addEventListener('paste', () => {
